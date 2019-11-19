@@ -10,7 +10,7 @@ from env.SmartGridEnv import SmartGridEnv
 
 import pandas as pd
 
-df = pd.read_csv('./data/AAPL.csv')
+df = pd.read_excel('./data/final_data.xlsx')
 df = df.sort_values('Date')
 
 # The algorithms require a vectorized environment to run
