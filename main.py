@@ -12,9 +12,10 @@ import pandas as pd
 
 df = pd.read_excel('./data/final_data.xlsx')
 df = df.sort_values('Date')
+df2 = pd.read_excel('./data/RL_data.xlsx')
 
 # The algorithms require a vectorized environment to run
-env = DummyVecEnv([lambda: SmartGridEnv(df)])
+env = DummyVecEnv([lambda: SmartGridEnv(df,df2)])
 
 model = PPO2(MlpPolicy, env, verbose=1)
 model.learn(total_timesteps=20000)
