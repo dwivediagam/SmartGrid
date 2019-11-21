@@ -7,7 +7,6 @@ import numpy as np
 import os
 
 MAX_STEPS = 20000
-
 import pickle
 
 data = pd.read_excel(os.getcwd()+"/data/RL_data.xlsx")
@@ -15,7 +14,7 @@ MAX_DEMAND = data['Actual Demand'].max()
 MAX_PREDICTED_DEMAND = data['Predicted Demand'].max()
 MAX_HOEP = data['Tariff'].max()
 MAX_COMPANY_TARIFF = data['Company Tariff'].max()
-NF = pow(10,5)
+
 PROFIT = 1
 
 class SmartGridEnv(gym.Env):
@@ -26,14 +25,14 @@ class SmartGridEnv(gym.Env):
         super(SmartGridEnv, self).__init__()
 
         self.df = df
-        
+        self.NF = pow(10,3)
         self.reward_range = (0,10/(abs(PROFIT)+1))
 
         # Actions of the format Increase x%, Decrease x%, Hold, etc.
         self.action_space = spaces.Box(
             low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16)
 
-        # Prices contains the OHCL values for the last fourty-eight prices
+        # Prices contains the demand and tariff values for the last fourty-eight prices
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(4,48), dtype=np.float16)
 
@@ -80,7 +79,7 @@ class SmartGridEnv(gym.Env):
 
         reward = (1/(abs(self.old_profit))+1) * delay_modifier
         
-        done = abs(self.old_profit)<=0.004
+        done = 0
 
         obs = self._next_observation()
 
@@ -112,5 +111,8 @@ class SmartGridEnv(gym.Env):
 
         print(f'Step: {self.current_step}')
         print(f'Tariff: {self.prev_t}')
-        print(f'Profit: {self.old_profit}')
+        print(f'Cost Function: {self.old_profit/self.NF}')
+        
+        self.NF= self.NF+10
+
     ## done = new_profit <=  0
