@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-with open('text.txt') as f:
+with open('text2.txt') as f:
     content = f.readlines()
 
 content = [x.strip() for x in content] 
@@ -15,5 +15,8 @@ for i in range(len(content)):
 
 time = range(0,len(tariff))
 
-plt.plot(time,tariff)
+plt.plot(time,profit)
+plt.title('Cost Function for year 2018')
+plt.xlabel('Index')
+plt.ylabel('Price in $')
 plt.show()
