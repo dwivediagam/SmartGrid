@@ -14,9 +14,9 @@ data = pd.read_excel(os.getcwd()+"/data/RL_data.xlsx")
 MAX_DEMAND = data['Actual Demand'].max()
 MAX_PREDICTED_DEMAND = data['Predicted Demand'].max()
 MAX_HOEP = data['Tariff'].max()
-MAX_GENERATED_SUPPLY = data['Company Tariff'].max()
+MAX_COMPANY_TARIFF = data['Company Tariff'].max()
+NF = pow(10,5)
 PROFIT = 1
-
 
 class SmartGridEnv(gym.Env):
     """A smart grid environment for OpenAI gym"""
@@ -27,28 +27,23 @@ class SmartGridEnv(gym.Env):
 
         self.df = df
         
-        self.reward_range = (0,1/(abs(PROFIT)+1))
+        self.reward_range = (0,10/(abs(PROFIT)+1))
 
-        # Actions of the format Buy x%, Sell x%, Hold, etc.
+        # Actions of the format Increase x%, Decrease x%, Hold, etc.
         self.action_space = spaces.Box(
             low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16)
 
-        # Prices contains the OHCL values for the last five prices
+        # Prices contains the OHCL values for the last fourty-eight prices
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(4, 48), dtype=np.float16)
+            low=0, high=1, shape=(4,48), dtype=np.float16)
 
     def _next_observation(self):
        
         obs = np.array([
-            self.df.loc[self.current_step: self.current_step +
-                        47, 'Actual Demand'].values / MAX_DEMAND,
-            self.df.loc[self.current_step: self.current_step +
-                        47, 'Tariff'].values / MAX_HOEP,
-            self.df.loc[self.current_step: self.current_step +
-                        47, 'Company Tariff'].values / MAX_GENERATED_SUPPLY,
-            self.df.loc[self.current_step: self.current_step + 
-                        47, 'Predicted Demand'].values / MAX_PREDICTED_DEMAND
-                        
+            self.df.loc[self.current_step:self.current_step+47,'Actual Demand'] / MAX_DEMAND,
+            self.df.loc[self.current_step:self.current_step+47,'Tariff'] / MAX_HOEP,
+            self.df.loc[self.current_step:self.current_step+47,'Company Tariff'] / MAX_COMPANY_TARIFF, 
+            np.repeat(self.df.loc[self.current_step,'Predicted Demand'] / MAX_PREDICTED_DEMAND, 48)               
         ])
 
         
@@ -56,10 +51,6 @@ class SmartGridEnv(gym.Env):
         return obs
 
     def _take_action(self, action):
-        # Set the current price to a random price within the time step
-        # current_price = random.uniform(
-        #     self.df.loc[self.current_step, "Open"], self.df.loc[self.current_step, "Close"])
-
         action_type = action[0]
         amount = action[1]
         self.prev_t = self.df.iloc[self.current_step]['Tariff']
@@ -74,8 +65,7 @@ class SmartGridEnv(gym.Env):
         elif action_type < 2: # previous profit is positive
             self.old_profit = (self.prev_t*actual - predicted*company - self.imbalance*abs(predicted-actual))
             self.prev_t = self.prev_t - amount * self.prev_t
-
-        
+ 
 
     def step(self, action):
         # Execute one time step within the environment
@@ -90,7 +80,7 @@ class SmartGridEnv(gym.Env):
 
         reward = (1/(abs(self.old_profit))+1) * delay_modifier
         
-        done = abs(self.old_profit) <= 0.004
+        done = abs(self.old_profit)<=0.004
 
         obs = self._next_observation()
 
@@ -101,7 +91,7 @@ class SmartGridEnv(gym.Env):
 
 
         self.prev_t = 0
-        self.imbalance = 0.8
+        self.imbalance = 0.08
         self.initial_tariff = self.df.iloc[0]['Tariff']
         self.initial_actual_demand = self.df.iloc[0]['Actual Demand']
         self.initial_predicted_demand = self.df.iloc[0]['Predicted Demand']
@@ -123,4 +113,4 @@ class SmartGridEnv(gym.Env):
         print(f'Step: {self.current_step}')
         print(f'Tariff: {self.prev_t}')
         print(f'Profit: {self.old_profit}')
-    
+    ## done = new_profit <=  0
